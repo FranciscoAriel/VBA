@@ -1,0 +1,164 @@
+Option Explicit
+
+Private Sub cboPuesto_Change()
+    cmdCalcular.Enabled = True
+    
+End Sub
+
+Private Sub cmdCalcular_Click()
+    txtCompensacion = salario(cboArea, cboPuesto, txtAntiguedad)
+    cmdCalcular.Enabled = False
+    txtCompensacion.BackColor = &H8000000D
+    txtCompensacion.Font.Bold = True
+End Sub
+
+Private Sub cmdCancelar_Click()
+    Unload Me 'Cierra el formulario
+End Sub
+
+
+Private Sub cmdIngresar_Click()
+
+    Range("A2").Activate ' inicia desde la celda A2
+    'Busca desde la celda A2 hacia abajo para comprobar si está vacía y se para donde esté vacía y ahí escribe los datos
+    Do While ActiveCell <> ""
+        ActiveCell.Offset(1, 0).Activate
+    Loop
+    ActiveCell.Value = txtNombre
+    ActiveCell.Offset(0, 1).Value = UCase(txtRFC)
+    'elige el sexo
+    If optMasculino = True Then
+        ActiveCell.Offset(0, 2).Value = UCase("Masculino")
+    Else
+        ActiveCell.Offset(0, 2).Value = UCase("Femenino")
+    End If
+    ' coloca los valores en las celdas adjuntas
+    ActiveCell.Offset(0, 3).Value = cboArea
+    ActiveCell.Offset(0, 4).Value = cboPuesto
+    ActiveCell.Offset(0, 5).Value = Val(txtAntiguedad)
+    ActiveCell.Offset(0, 6).Value = salario(cboArea, cboPuesto, txtAntiguedad)
+    ActiveCell.Offset(0, 7).Value = Time
+    ActiveCell.Offset(0, 8).Value = Date
+    
+    'cuando acaba se pasa al sig renglón
+    ActiveCell.Offset(1, 0).Activate
+    ' se deshabilita el boton ingresar
+    cmdIngresar.Enabled = False
+    ' se borra el regitro anterior
+    txtNombre.Value = ""
+    txtRFC.Value = ""
+
+    UserForm_Initialize
+End Sub
+
+
+Private Sub spbAntiguedad_Change()
+    txtAntiguedad.Value = spbAntiguedad.Value ' vincula el botón de número con el cuadro de antigüedad
+End Sub
+
+
+
+
+Private Sub txtNombre_Change()
+    txtNombre = UCase(txtNombre.Value) ' cambia automaticamente a mayúsculas
+End Sub
+
+Private Sub txtNombre_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+    ' Permite la introducción de letras únicamente, incluido el acento en mayúsculas y minusculas y dieresis
+    If (KeyAscii >= 65 And KeyAscii <= 90) Or (KeyAscii >= 97 And KeyAscii <= 122) Or KeyAscii = 32 _
+            Or KeyAscii = 193 Or KeyAscii = 225 Or KeyAscii = 201 Or KeyAscii = 233 _
+            Or KeyAscii = 237 Or KeyAscii = 205 Or KeyAscii = 243 Or KeyAscii = 211 _
+            Or KeyAscii = 218 Or KeyAscii = 250 Or KeyAscii = 252 Or KeyAscii = 209 _
+            Or KeyAscii = 241 Or KeyAscii = 220 Then
+    Else
+        KeyAscii = 0 ' si son caracteres distintos a las letras no los acepta
+    End If
+End Sub
+
+Private Sub txtRFC_Change()
+    'al empezar a escribir en el de texto habilita el boton ingresar
+    cmdIngresar.Enabled = True
+    ' cambia a mayúsculas
+    txtRFC = UCase(txtRFC)
+   
+End Sub
+
+Private Sub txtRFC_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+     ' Acepta letras y números
+    If (KeyAscii >= 65 And KeyAscii <= 90) Or (KeyAscii >= 97 And KeyAscii <= 122) Or _
+        (KeyAscii >= 48 And KeyAscii <= 57) Then
+    Else
+        KeyAscii = 0
+    End If
+    
+End Sub
+
+Private Sub UserForm_Initialize()
+    txtCompensacion.Value = ""
+    txtCompensacion.BackColor = &H80000011
+    txtCompensacion.Font.Bold = False
+    cboArea.Clear
+    cboPuesto.Clear
+    txtAntiguedad.Value = ""
+    ' Se agregan los nombres a la lista
+    cboArea.AddItem "FINANCIERA"
+    cboArea.AddItem "RECURSOS HUMANOS"
+    cboArea.AddItem "MATERIALES"
+    cboArea.AddItem "TÉCNICA"
+    
+    
+    'se agregan nombres a cuadro combinado
+    cboPuesto.AddItem "SUPERIOR"
+    cboPuesto.AddItem "ADMINISTRATIVO"
+    cboPuesto.AddItem "TÉCNICO"
+    
+    cmdIngresar.Enabled = False
+    cmdCalcular.Enabled = False
+    
+End Sub
+
+
+Public Function salario(cboArea As String, cboPuesto As String, txtAntiguedad As Integer) As Single
+    
+    'Declaración de variables
+    Dim sngSalario As Single ' variable numérica con parte decimal que guardará el resultado
+    Dim strArea As String ' cadena que guarda la respuesta del area
+    Dim strPuesto As String ' cadena que guarda la respuesta del puesto
+    Dim intArea As Integer ' variable donde se le va asignar la cantidad por ser del area
+    Dim intPuesto As Integer ' variable donde se guarda la cantidad por ser del puesto
+    Dim intAntiguedad As Integer ' variable donde guarda los años laborados
+    Dim sngPorcentaje As Single 'calcula cantidad segun los años
+    
+    'se recibe la respuesta de los cuadros combinados
+    strArea = ActiveCell.Offset(0, 3).Value
+    strPuesto = ActiveCell.Offset(0, 4).Value
+    intAntiguedad = ActiveCell.Offset(0, 5).Value
+    
+    Select Case strArea
+        Case "FINANCIERA", "RECURSOS HUMANOS":
+            intArea = 1000
+        Case Else
+            intArea = 500
+    End Select
+    
+    Select Case strPuesto
+        Case "SUPERIOR":
+            intPuesto = 1500
+        Case Else
+            intPuesto = 750
+    End Select
+    
+    If intAntiguedad <= 9 Then
+        sngPorcentaje = 0.2 * intArea + 0.13 * intPuesto
+    Else
+        If intAntiguedad <= 19 Then
+            sngPorcentaje = 0.33 * intArea + 0.33 * intPuesto
+        Else
+            sngPorcentaje = 0.5 * intArea + 0.5 * intPuesto
+        End If
+    End If
+    
+    sngSalario = 62.33 * 30 + intArea + intPuesto + sngPorcentaje
+    salario = sngSalario
+    
+End Function
